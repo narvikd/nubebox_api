@@ -1,0 +1,11 @@
+version: "1"
+packages:
+  - name: "dbengine"
+    path: "db/dbengine"
+    engine: "postgresql"
+    emit_json_tags: true
+    schema: "db/dbengine/sql/schema.sql"
+    queries: "db/dbengine/sql/queries.sql"
+overrides:
+  - db_type: "decimal"
+    go_type: "float64" # maybe change it to a proper decimal type, e.g. github.com/shopspring/decimal.Decimal
