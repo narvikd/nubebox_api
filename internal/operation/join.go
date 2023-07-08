@@ -65,7 +65,7 @@ func DBToFile(query *dbengine.Queries, srcFileName string, dstFileName string) e
 // joinChunks takes a slice of filenames and a destination file path as input.
 // It then reads each chunk file in order and writes its contents to the destination file.
 func joinChunks(fileNames []string, destFilePath string) error {
-	destFile, errCreate := os.Create(destFilePath)
+	destFile, errCreate := os.Create(filepath.Clean(destFilePath))
 	if errCreate != nil {
 		return errCreate
 	}
@@ -80,11 +80,11 @@ func joinChunks(fileNames []string, destFilePath string) error {
 		_, errCopy := io.Copy(destFile, chunkFile)
 		if errCopy != nil {
 			// TODO: Refactor
-			chunkFile.Close()
+			_ = chunkFile.Close()
 			return errCopy
 		}
 
-		chunkFile.Close()
+		_ = chunkFile.Close()
 	}
 
 	return nil
