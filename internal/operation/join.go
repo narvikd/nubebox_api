@@ -72,7 +72,7 @@ func joinChunks(fileNames []string, destFilePath string) error {
 	defer destFile.Close()
 
 	for _, chunkFilePath := range fileNames {
-		chunkFile, errOpen := os.Open(chunkFilePath)
+		chunkFile, errOpen := os.Open(filepath.Clean(chunkFilePath))
 		if errOpen != nil {
 			return errOpen
 		}
