@@ -44,14 +44,14 @@ func FileToDB(query *dbengine.Queries, fileName string) error {
 
 // splitFileIntoChunks is a function that splits the provided file into chunks of a given size.
 // The function returns a slice of strings containing the file names of each chunk file.
-func splitFileIntoChunks(filePath string, chunkSize int) ([]string, error) {
-	fileDescriptor, errOpen := os.Open(filePath)
+func splitFileIntoChunks(fileName string, chunkSize int) ([]string, error) {
+	fileDescriptor, errOpen := os.Open(filepath.Clean(fileName))
 	if errOpen != nil {
 		return nil, errorskit.Wrap(errOpen, "couldn't open file at splitter")
 	}
 	defer func(fileDescriptor *os.File) {
 		if errCloser := fileDescriptor.Close(); errCloser != nil {
-			log.Printf("warning: OS couldn't close file: '%s' correctly. Err: %v\n", filePath, errCloser)
+			log.Printf("warning: OS couldn't close file: '%s' correctly. Err: %v\n", fileName, errCloser)
 		}
 	}(fileDescriptor)
 
@@ -74,13 +74,13 @@ func splitFileIntoChunks(filePath string, chunkSize int) ([]string, error) {
 
 		// Create a unique file name for each chunk
 		chunkFilePath := filepath.Join(
-			filepath.Dir(filePath),
+			filepath.Dir(fileName),
 			fmt.Sprintf("%s_chunk_%d",
-				filepath.Base(filePath), chunkNumCounter,
+				filepath.Base(fileName), chunkNumCounter,
 			),
 		)
 
-		chunkFile, errCreate := os.Create(chunkFilePath)
+		chunkFile, errCreate := os.Create(filepath.Clean(chunkFilePath))
 		if errCreate != nil {
 			return nil, errorskit.Wrap(errCreate, "couldn't create chunked file at splitter")
 		}
