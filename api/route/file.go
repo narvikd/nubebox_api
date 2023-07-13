@@ -16,7 +16,7 @@ type FileModel struct {
 	FileName string `json:"filename" validate:"required"`
 }
 
-func (c *ApiCtx) listFile(fiberCtx *fiber.Ctx) error {
+func (c *ApiCtx) listFiles(fiberCtx *fiber.Ctx) error {
 	f, err := c.Query.GetAllFileNames(context.Background())
 	if err != nil {
 		const clientErr = "couldn't get filenames"
