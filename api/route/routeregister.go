@@ -32,6 +32,7 @@ func Register(app *app.App) {
 func routes(app *fiber.App, route *ApiCtx) {
 	api := app.Group("/api/v1")
 	api.Post("/file/download", route.downloadFile)
-	api.Post("/file/upload", route.uploadFile)
+	api.Put("/file/replace", route.replaceFile)
 	api.Get("/file", route.listFile)
+	api.Delete("/file", route.deleteFile)
 }

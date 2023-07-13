@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 )
 
-type UploadModel struct {
+type FileModel struct {
 	FileName string `json:"filename" validate:"required"`
 }
 
@@ -31,7 +31,7 @@ func (c *ApiCtx) listFile(fiberCtx *fiber.Ctx) error {
 	return jsonresponse.OK(fiberCtx, "filenames retrieved from DB", f)
 }
 
-func (c *ApiCtx) uploadFile(fiberCtx *fiber.Ctx) error {
+func (c *ApiCtx) replaceFile(fiberCtx *fiber.Ctx) error {
 	file, errUpload := fiberCtx.FormFile("file")
 	if errUpload != nil {
 		wrpErr := errorskit.Wrap(errUpload, "couldn't process formFile at uploadFile")
@@ -48,6 +48,11 @@ func (c *ApiCtx) uploadFile(fiberCtx *fiber.Ctx) error {
 		}
 	}()
 
+	_, errDeleteFile := c.Query.DeleteFile(context.Background(), file.Filename)
+	if errDeleteFile != nil {
+		return jsonresponse.ServerError(fiberCtx, errDeleteFile.Error())
+	}
+
 	if errFileToDB := operation.FileToDB(c.Query, file.Filename); errFileToDB != nil {
 		wrpErr := errorskit.Wrap(errFileToDB, "couldn't save file to db at uploadVideo")
 		return jsonresponse.ServerError(fiberCtx, wrpErr.Error())
@@ -56,7 +61,7 @@ func (c *ApiCtx) uploadFile(fiberCtx *fiber.Ctx) error {
 }
 
 func (c *ApiCtx) downloadFile(fiberCtx *fiber.Ctx) error {
-	m := new(UploadModel)
+	m := new(FileModel)
 	errParse := fiberparser.ParseAndValidate(fiberCtx, m)
 	if errParse != nil {
 		return jsonresponse.BadRequest(fiberCtx, errParse.Error())
@@ -79,4 +84,28 @@ func (c *ApiCtx) downloadFile(fiberCtx *fiber.Ctx) error {
 	}()
 
 	return fiberCtx.Download(destination, m.FileName)
+}
+
+func (c *ApiCtx) deleteFile(fiberCtx *fiber.Ctx) error {
+	m := new(FileModel)
+	errParse := fiberparser.ParseAndValidate(fiberCtx, m)
+	if errParse != nil {
+		return jsonresponse.BadRequest(fiberCtx, errParse.Error())
+	}
+
+	exists, errCheckExists := c.Query.FileExists(context.Background(), m.FileName)
+	if errCheckExists != nil {
+		return jsonresponse.ServerError(fiberCtx, errCheckExists.Error())
+	}
+
+	if !exists {
+		return jsonresponse.BadRequest(fiberCtx, "file doesn't exist")
+	}
+
+	_, errDeleteFile := c.Query.DeleteFile(context.Background(), m.FileName)
+	if errDeleteFile != nil {
+		return jsonresponse.ServerError(fiberCtx, errDeleteFile.Error())
+	}
+
+	return jsonresponse.OK(fiberCtx, m.FileName, "")
 }

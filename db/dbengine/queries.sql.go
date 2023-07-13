@@ -10,6 +10,30 @@ import (
 	"database/sql"
 )
 
+const deleteFile = `-- name: DeleteFile :execresult
+delete
+from testfiles
+where filename = $1
+`
+
+func (q *Queries) DeleteFile(ctx context.Context, filename string) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteFile, filename)
+}
+
+const fileExists = `-- name: FileExists :one
+select exists(
+    select 1
+    from testfiles where filename = $1
+)
+`
+
+func (q *Queries) FileExists(ctx context.Context, filename string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, fileExists, filename)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const getAllFileNames = `-- name: GetAllFileNames :many
 select distinct filename from testfiles
 `
