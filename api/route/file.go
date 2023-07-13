@@ -17,11 +17,12 @@ type FileModel struct {
 }
 
 func (c *ApiCtx) listFiles(fiberCtx *fiber.Ctx) error {
+	const genericErr = "couldn't get filenames"
+
 	f, err := c.Query.GetAllFileNames(context.Background())
 	if err != nil {
-		const clientErr = "couldn't get filenames"
-		errorskit.LogWrap(err, clientErr)
-		return jsonresponse.ServerError(fiberCtx, clientErr)
+		errorskit.LogWrap(err, genericErr)
+		return jsonresponse.ServerError(fiberCtx, genericErr)
 	}
 
 	if len(f) <= 0 {
