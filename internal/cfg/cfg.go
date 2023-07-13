@@ -45,11 +45,8 @@ func InitCfg() *Config {
 		}
 	}(file)
 
-	// Handles the decoding of the file into the Config struct
-	decoder := yaml.NewDecoder(file)
 	config := new(Config)
-	errDecode := decoder.Decode(&config)
-	if errDecode != nil {
+	if errDecode := yaml.NewDecoder(file).Decode(&config); errDecode != nil {
 		errorskit.FatalWrap(errDecode, "couldn't decode the configuration .yml file")
 	}
 	cfgCheckers(config)
@@ -59,7 +56,6 @@ func InitCfg() *Config {
 // cfgCheckers calls all "config file" checkers to ensure it's all read as intended
 func cfgCheckers(config *Config) {
 	checkCfgEmpty(config)
-	//checkFiberCfg(config)
 }
 
 // checkCfgEmpty iterates through a Config object and checks if any parameters are empty.

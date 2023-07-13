@@ -1,7 +1,6 @@
 package route
 
 import (
-	"api/api/jsonresponse"
 	"api/db/dbengine"
 	"api/internal/app"
 	"api/internal/cfg"
@@ -32,9 +31,8 @@ func Register(app *app.App) {
 
 func routes(app *fiber.App, route *ApiCtx) {
 	api := app.Group("/api/v1")
-	api.Get("/", route.getRoot)
-}
-
-func (c *ApiCtx) getRoot(fiberCtx *fiber.Ctx) error {
-	return jsonresponse.OK(fiberCtx, "Hello")
+	api.Get("/file", route.downloadFile)
+	api.Get("/file/list", route.listFiles)
+	api.Put("/file", route.replaceFile)
+	api.Delete("/file", route.deleteFile)
 }

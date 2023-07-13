@@ -10,6 +10,57 @@ import (
 	"database/sql"
 )
 
+const deleteFile = `-- name: DeleteFile :execresult
+delete
+from testfiles
+where filename = $1
+`
+
+func (q *Queries) DeleteFile(ctx context.Context, filename string) (sql.Result, error) {
+	return q.db.ExecContext(ctx, deleteFile, filename)
+}
+
+const fileExists = `-- name: FileExists :one
+select exists(
+    select 1
+    from testfiles where filename = $1
+)
+`
+
+func (q *Queries) FileExists(ctx context.Context, filename string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, fileExists, filename)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const getAllFileNames = `-- name: GetAllFileNames :many
+select distinct filename from testfiles
+`
+
+func (q *Queries) GetAllFileNames(ctx context.Context) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, getAllFileNames)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var filename string
+		if err := rows.Scan(&filename); err != nil {
+			return nil, err
+		}
+		items = append(items, filename)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getFileByID = `-- name: GetFileByID :one
 select contents
 from testfiles
