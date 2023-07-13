@@ -13,3 +13,6 @@ limit 1;
 -- name: InsertFile :execresult
 INSERT INTO testfiles (id, filename, contents, chunk_num)
 VALUES (DEFAULT, $1, $2, $3);
+
+-- name: GetAllFileNames :many
+select distinct filename from testfiles;
