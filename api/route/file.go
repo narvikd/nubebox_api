@@ -36,7 +36,7 @@ func (c *ApiCtx) listFiles(fiberCtx *fiber.Ctx) error {
 func (c *ApiCtx) replaceFile(fiberCtx *fiber.Ctx) error {
 	file, errUpload := fiberCtx.FormFile("file")
 	if errUpload != nil {
-		debugMsg := debugerr.WrapMsg("process formFile", "uploadFile")
+		debugMsg := debugerr.WrapMsg("process file upload", "uploadFile")
 		errorskit.LogWrap(errUpload, debugMsg)
 		return jsonresponse.BadRequest(fiberCtx, debugMsg)
 	}
@@ -76,7 +76,7 @@ func (c *ApiCtx) downloadFile(fiberCtx *fiber.Ctx) error {
 		return jsonresponse.BadRequest(fiberCtx, errParse.Error())
 	}
 
-	ext := filepath.Ext(m.FileName)
+	ext := filepath.Ext(m.FileName) // ext starts with a dot
 	if ext == "" {
 		return jsonresponse.BadRequest(fiberCtx, "filename was not valid")
 	}
@@ -118,7 +118,7 @@ func (c *ApiCtx) deleteFile(fiberCtx *fiber.Ctx) error {
 
 	_, errDeleteFile := c.Query.DeleteFile(context.Background(), m.FileName)
 	if errDeleteFile != nil {
-		debugMsg := debugerr.WrapMsg("check if file exists", "deleteFile")
+		debugMsg := debugerr.WrapMsg("delete file", "deleteFile")
 		errorskit.LogWrap(errDeleteFile, debugMsg)
 		return jsonresponse.ServerError(fiberCtx, debugMsg)
 	}
