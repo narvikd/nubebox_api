@@ -16,7 +16,7 @@ import (
 
 func DBToFile(query *dbengine.Queries, srcFileName string, dstFileName string) error {
 	var (
-		i         int64
+		iteration int64
 		fileNames []string
 	)
 
@@ -29,8 +29,8 @@ func DBToFile(query *dbengine.Queries, srcFileName string, dstFileName string) e
 		return errors.New("file doesn't exist on DB")
 	}
 
-	for i = 0; i < count; i++ {
-		fileBytes, errGetFile := db.GetFile(query, srcFileName, i)
+	for iteration = 0; iteration < count; iteration++ {
+		fileBytes, errGetFile := db.GetFile(query, srcFileName, iteration)
 		if errGetFile != nil {
 			return errGetFile
 		}
@@ -38,7 +38,7 @@ func DBToFile(query *dbengine.Queries, srcFileName string, dstFileName string) e
 		chunkFilePath := filepath.Join(
 			filepath.Dir(dstFileName),
 			fmt.Sprintf("%s_chunk_%d",
-				filepath.Base(dstFileName), i,
+				filepath.Base(dstFileName), iteration,
 			),
 		)
 		fileNames = append(fileNames, chunkFilePath)
