@@ -1,6 +1,7 @@
 package route
 
 import (
+	"api/api/debugerr"
 	"api/api/jsonresponse"
 	"api/internal/operation"
 	"context"
@@ -35,38 +36,46 @@ func (c *ApiCtx) listFiles(fiberCtx *fiber.Ctx) error {
 func (c *ApiCtx) replaceFile(fiberCtx *fiber.Ctx) error {
 	file, errUpload := fiberCtx.FormFile("file")
 	if errUpload != nil {
-		wrpErr := errorskit.Wrap(errUpload, "couldn't process formFile at uploadFile")
-		return jsonresponse.BadRequest(fiberCtx, wrpErr.Error())
+		debugMsg := debugerr.WrapMsg("process formFile", "uploadFile")
+		errorskit.LogWrap(errUpload, debugMsg)
+		return jsonresponse.BadRequest(fiberCtx, debugMsg)
 	}
+
 	errSave := fiberCtx.SaveFile(file, file.Filename)
 	if errSave != nil {
-		wrpErr := errorskit.Wrap(errSave, "couldn't save file at uploadFile")
-		return jsonresponse.ServerError(fiberCtx, wrpErr.Error())
+		debugMsg := debugerr.WrapMsg("save file", "uploadFile")
+		errorskit.LogWrap(errSave, debugMsg)
+		return jsonresponse.ServerError(fiberCtx, debugMsg)
 	}
+
 	defer func() {
 		if errDelete := filekit.DeleteFile(file.Filename); errDelete != nil {
-			errorskit.LogWrap(errDelete, "couldn't delete temporal file at uploadVideo")
+			errorskit.LogWrap(errDelete, debugerr.WrapMsg("delete temporal file", "uploadVideo"))
 		}
 	}()
 
 	_, errDeleteFile := c.Query.DeleteFile(context.Background(), file.Filename)
 	if errDeleteFile != nil {
-		return jsonresponse.ServerError(fiberCtx, errDeleteFile.Error())
+		debugMsg := debugerr.WrapMsg("delete old version of file", "uploadFile")
+		errorskit.LogWrap(errDeleteFile, debugMsg)
+		return jsonresponse.ServerError(fiberCtx, debugMsg)
 	}
 
 	if errFileToDB := operation.FileToDB(c.Query, file.Filename); errFileToDB != nil {
-		wrpErr := errorskit.Wrap(errFileToDB, "couldn't save file to db at uploadVideo")
-		return jsonresponse.ServerError(fiberCtx, wrpErr.Error())
+		debugMsg := debugerr.WrapMsg("save file to db", "uploadFile")
+		errorskit.LogWrap(errFileToDB, debugMsg)
+		return jsonresponse.ServerError(fiberCtx, debugMsg)
 	}
+
 	return jsonresponse.OK(fiberCtx, file.Filename, "")
 }
 
 func (c *ApiCtx) downloadFile(fiberCtx *fiber.Ctx) error {
 	m := new(FileModel)
-	errParse := fiberparser.ParseAndValidate(fiberCtx, m)
-	if errParse != nil {
+	if errParse := fiberparser.ParseAndValidate(fiberCtx, m); errParse != nil {
 		return jsonresponse.BadRequest(fiberCtx, errParse.Error())
 	}
+
 	ext := filepath.Ext(m.FileName)
 	if ext == "" {
 		return jsonresponse.BadRequest(fiberCtx, "filename was not valid")
@@ -74,13 +83,16 @@ func (c *ApiCtx) downloadFile(fiberCtx *fiber.Ctx) error {
 
 	destination := uuid.NewString() + ext
 
-	errSaveFile := operation.DBToFile(c.Query, m.FileName, destination)
-	if errSaveFile != nil {
-		return jsonresponse.ServerError(fiberCtx, errSaveFile.Error())
+	errSave := operation.DBToFile(c.Query, m.FileName, destination)
+	if errSave != nil {
+		debugMsg := debugerr.WrapMsg("save file", "downloadFile")
+		errorskit.LogWrap(errSave, debugMsg)
+		return jsonresponse.ServerError(fiberCtx, debugMsg)
 	}
+
 	defer func() {
 		if errDelete := filekit.DeleteFile(destination); errDelete != nil {
-			errorskit.LogWrap(errDelete, "couldn't delete temporal file at downloadFile")
+			errorskit.LogWrap(errDelete, debugerr.WrapMsg("delete temporal file", "downloadFile"))
 		}
 	}()
 
@@ -89,14 +101,15 @@ func (c *ApiCtx) downloadFile(fiberCtx *fiber.Ctx) error {
 
 func (c *ApiCtx) deleteFile(fiberCtx *fiber.Ctx) error {
 	m := new(FileModel)
-	errParse := fiberparser.ParseAndValidate(fiberCtx, m)
-	if errParse != nil {
+	if errParse := fiberparser.ParseAndValidate(fiberCtx, m); errParse != nil {
 		return jsonresponse.BadRequest(fiberCtx, errParse.Error())
 	}
 
 	exists, errCheckExists := c.Query.FileExists(context.Background(), m.FileName)
 	if errCheckExists != nil {
-		return jsonresponse.ServerError(fiberCtx, errCheckExists.Error())
+		debugMsg := debugerr.WrapMsg("check if file exists", "deleteFile")
+		errorskit.LogWrap(errCheckExists, debugMsg)
+		return jsonresponse.ServerError(fiberCtx, debugMsg)
 	}
 
 	if !exists {
@@ -105,7 +118,9 @@ func (c *ApiCtx) deleteFile(fiberCtx *fiber.Ctx) error {
 
 	_, errDeleteFile := c.Query.DeleteFile(context.Background(), m.FileName)
 	if errDeleteFile != nil {
-		return jsonresponse.ServerError(fiberCtx, errDeleteFile.Error())
+		debugMsg := debugerr.WrapMsg("check if file exists", "deleteFile")
+		errorskit.LogWrap(errDeleteFile, debugMsg)
+		return jsonresponse.ServerError(fiberCtx, debugMsg)
 	}
 
 	return jsonresponse.OK(fiberCtx, m.FileName, "")
